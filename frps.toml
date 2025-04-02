@@ -1,0 +1,10 @@
+bindPort = 7000
+webServer.port = 7500
+webServer.user = "admin"
+webServer.password = "admin"
+auth.token = "123456789"
+vhostHTTPPort = 180
+vhostHTTPSPort = 1443
+kcpBindPort = 7001
+httpProxyPort = 8081
+maxPoolCount = 1000
