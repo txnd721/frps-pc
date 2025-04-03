@@ -9,12 +9,13 @@ import win32api
 import win32con
 import win32gui
 import pystray
+import argparse
 from PIL import Image
 
 class FRPSManager:
     def __init__(self, root):
         self.root = root
-        self.version = "1.0.0"
+        self.version = "1.0.1"
         self.root.title(f"FRPS 服务管理器 v{self.version}")
         self.root.geometry("600x400")
         
@@ -217,6 +218,13 @@ class FRPSManager:
                 self.root.after(0, lambda: messagebox.showerror("错误", f"未找到frps.exe文件！路径: {frps_path}"))
                 return
                 
+            # 检查是否有延迟启动设置
+            if hasattr(self, 'delay_entry') and self.delay_entry.get().isdigit():
+                delay = int(self.delay_entry.get())
+                if delay > 0:
+                    self.root.after(0, lambda: self.log_text.insert(tk.END, f"等待 {delay} 秒后启动FRPS服务...\n"))
+                    time.sleep(delay)
+                
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             startupinfo.wShowWindow = subprocess.SW_HIDE
@@ -358,7 +366,12 @@ class FRPSManager:
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 
                             "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 
                             0, winreg.KEY_SET_VALUE)
-        app_path = os.path.abspath(__file__)
+        
+        # 获取正确的可执行文件路径
+        if getattr(sys, 'frozen', False):
+            app_path = sys.executable
+        else:
+            app_path = os.path.abspath(__file__)
         
         if self.auto_start.get() == 1:
             try:
@@ -577,6 +590,18 @@ class FRPSManager:
         self.quit_application()
 
 if __name__ == "__main__":
+    # 解析命令行参数
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--delay', type=int, help='延迟启动时间(秒)')
+    args = parser.parse_args()
+    
     root = tk.Tk()
     app = FRPSManager(root)
+    
+    # 处理延迟启动
+    if args.delay and args.delay > 0:
+        app.log(f"等待{args.delay}秒后启动FRPS服务")
+        time.sleep(args.delay)
+        app.start_frps()
+    
     root.mainloop()
